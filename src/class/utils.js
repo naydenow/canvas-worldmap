@@ -1,6 +1,3 @@
-const CUBSTEP = 2000;
-
-
 export const calcRegion = (region, length) => {
   let _r = region.split('=').map(function (r) {
     return +r;
@@ -24,18 +21,9 @@ export const calcRegion = (region, length) => {
   return res;
 };
 
-export const regionFromPosition = (x, z) => {
-  let _x = _z = CUBSTEP / 2;
-  if (x < 0) {
-    _x = -_x;
-  }
-  if (z < 0) {
-    _z = -_z;
-  }
+export const regionFromPosition = (x, y, CUBSTEP = 2000) => {
+  let _x = CUBSTEP/2;
+  let _y = _x;
 
-
-  let x = ~~(((_x + x) / CUBSTEP));
-  let z = ~~(((_z + z) / CUBSTEP));
-
-  return x + '=' + z;
+  return ~~( ( (x > 0 ? _x : -_x) + x ) / CUBSTEP )+ "="+ ~~( ( (y > 0 ? _y : -_y) + y ) / CUBSTEP );
 };

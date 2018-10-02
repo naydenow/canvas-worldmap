@@ -1,4 +1,7 @@
 import Grid from './grid';
+import {regionFromPosition} from './utils';
+
+const defLength = 20;
 
 export default class Map {
   constructor(element) {
@@ -9,9 +12,89 @@ export default class Map {
     this.camera   = {
       x:    0,
       y:    0,
-      r:    '0=0',
       zoom: 3
-    }
+    };
+
+    this.mouseDown   = false;
+    this.oldPosition = {x: null, y: null};
+  }
+
+  goToRegion(region, zoom) {
+    if (zoom)
+      this.camera.zoom = zoom;
+
+    let r = region.split('=');
+
+    this.camera.x = r[0] * this.grid._heigth * -1;
+    this.camera.y = r[1] * this.grid._width * -1;
+    this.grid.updateNearRegion(this.camera.zoom);
+  }
+
+  goToGlobalPosition(x, y, zoom = this.camera.zoom) {
+    if (zoom)
+      this.camera.zoom = zoom;
+
+    let r = regionFromPosition(x, y).split('=');
+
+    this.camera.x = r[0] * this.grid._heigth * -1;
+    this.camera.y = r[1] * this.grid._width * -1;
+
+    this.grid.updateNearRegion(this.camera.zoom);
+  }
+
+  registerEvents() {
+    this.canvas.addEventListener("wheel", (e) => {
+      var delta = e.deltaY || e.detail || e.wheelDelta;
+
+      if (delta > 0) {
+        this.camera.zoom += 0.4;
+      } else {
+        this.camera.zoom -= 0.4;
+      }
+
+      if (this.camera.zoom <= 0.8)
+        this.camera.zoom = 0.8;
+
+      if (this.camera.zoom > 5)
+        this.camera.zoom = 5;
+
+      this.grid.updateNearRegion(this.camera.zoom)
+    });
+
+    this.canvas.addEventListener("mousedown", (e) => {
+      this.mouseDown = true;
+    });
+
+    document.addEventListener("mouseup", (e) => {
+      this.mouseDown   = false;
+      this.oldPosition = {x: null, y: null};
+    });
+
+    this.canvas.addEventListener("mousemove", (e) => {
+      if (!this.mouseDown)
+        return;
+
+      if (this.oldPosition.x === null && this.oldPosition.y === null) {
+        this.oldPosition = {
+          x: e.x,
+          y: e.y
+        };
+
+        return;
+      }
+
+      let _x = this.oldPosition.x - e.x;
+      let _y = this.oldPosition.y - e.y;
+
+
+      this.camera.x -= _x;
+      this.camera.y -= _y;
+
+      this.oldPosition = {
+        x: e.x,
+        y: e.y
+      };
+    });
   }
 
   open() {
@@ -44,17 +127,23 @@ export default class Map {
   init() {
     this.canvas = document.getElementById(this.element);
     this.ctx    = this.canvas.getContext('2d');
-    this.width = this.canvas.width;
+    this.width  = this.canvas.width;
     this.height = this.canvas.height;
-    this.children.push(new Grid(this));
+    this.grid   = new Grid(this);
+    this.children.push(this.grid);
     this.center = {
-      x:this.width/2,
-      y: this.height/2
-    }
+      x: this.width / 2,
+      y: this.height / 2
+    };
+
+    this.registerEvents();
   }
 
   render() {
-    this.ctx.clearRect(0, 0, this.width , this.height);
+    if (this.mouseDown)
+      this.grid.updateNearRegion();
+
+    this.ctx.clearRect(0, 0, this.width, this.height);
     this.children.forEach(e => e.render(this.ctx));
   }
 }

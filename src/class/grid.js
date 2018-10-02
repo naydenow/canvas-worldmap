@@ -1,4 +1,5 @@
-import {calcRegion} from './utils';
+import {calcRegion, regionFromPosition} from './utils';
+
 const defLength = 20;
 
 export default class Grid {
@@ -6,29 +7,32 @@ export default class Grid {
     this.app     = app;
     this.regions = [];
     this.center  = '0=0';
-    this.length  = defLength / app.camera.zoom;
-    this.updateNearRegion();
+    this.updateNearRegion(app.camera.zoom);
   }
 
-  updateNearRegion() {
+  updateNearRegion(zoom = this.app.camera.zoom) {
+    this.length  = defLength / zoom;
     this._heigth = ~~(this.app.height / this.length + .5);
-    this._width = ~~(this.app.width / this.length + .5);
-    this.regions = calcRegion(this.center, this.length)
+    this._width  = ~~(this.app.width / this.length + .5);
+
+    this.center  = regionFromPosition(this.app.camera.x * -1, this.app.camera.y * -1, (this._width + this._heigth) / 2);
+    this.regions = calcRegion(this.center, ~~this.length);
   }
 
   render(ctx) {
-    if (defLength / this.app.camera.zoom !== this.length){
-      this.length = defLength /  this.app.camera.zoom;
-      this.updateNearRegion();
-    }
-
     this.regions.forEach((r) => {
-      let x = this.app.camera.x + this.app.center.x + r[0] * this._width;
-      let y = this.app.camera.y + this.app.center.x + r[1] * this._heigth;
+      let x = ~~(-this._width / 2 + this.app.camera.x + this.app.center.x + r[0] * this._width + .5);
+      let y = ~~(-this._heigth / 2 + this.app.camera.y + this.app.center.x + r[1] * this._heigth + .5);
 
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x+this._width , y);
+      ctx.lineTo(x + this._width, y);
+
+      if (this.app.camera.zoom > 1) {
+        ctx.font      = `${20 - this.length}px Comic Sans MS`;
+        ctx.textAlign = "center";
+        ctx.fillText(`${~~r[0]}=${~~r[1]}`, x + this._width / 2, y + this._heigth / 2);
+      }
 
       ctx.moveTo(x, y);
       ctx.lineTo(x, y + this._heigth);
