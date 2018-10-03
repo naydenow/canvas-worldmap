@@ -1,11 +1,18 @@
 import Grid from './grid';
 import {regionFromPosition} from './utils';
-import Marker from './marker';
+import Picture from './picture';
+import Highmap from './highmap';
+import Сircle from './circle';
 
 export default class Map {
-  constructor(element) {
+  constructor(element, map) {
+    this._map     = map;
     this.element  = element;
-    this.children = [];
+    this.markers  = [];
+    this.areas    = [];
+    this.pictures = [];
+    this.highmap  = [];
+    this.quests   = [];
     this.inited   = false;
     this.opened   = false;
     this.camera   = {
@@ -16,6 +23,27 @@ export default class Map {
 
     this.mouseDown   = false;
     this.oldPosition = {x: null, y: null};
+    this.parseMap();
+  }
+
+  parseMap() {
+    (this._map.areas || []).forEach(a => {
+      this.areas.push(new Сircle(this, {x: a.position[0], y: a.position[2]}, a.position[3], a.color, a.name));
+    });
+
+    (this._map.pictures || []).forEach(p => {
+      this.pictures.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
+    });
+
+    (this._map.quests || []).forEach(p => {
+      this.quests.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
+    });
+
+    (this._map.highmap || []).forEach(h => {
+      this.highmap.push(new Highmap(this, h));
+    });
+
+
   }
 
   goToRegion(region = this.grid.center, zoom) {
@@ -44,8 +72,8 @@ export default class Map {
     this.grid.updateNearRegion(this.camera.zoom);
   }
 
-  zoom(z = this.camera.zoom){
-    this.goToRegion(void 0,z);
+  zoom(z = this.camera.zoom) {
+    this.goToRegion(void 0, z);
   }
 
   registerEvents() {
@@ -67,7 +95,6 @@ export default class Map {
 
       this.zoom();
     });
-
 
     this.canvas.addEventListener("mousedown", (e) => {
       this.mouseDown = true;
@@ -138,17 +165,12 @@ export default class Map {
     this.width  = this.canvas.width;
     this.height = this.canvas.height;
     this.grid   = new Grid(this);
-    this.children.push(this.grid);
     this.center = {
       x: this.width / 2,
       y: this.height / 2
     };
 
     this.registerEvents();
-
-    this.children.push(new Marker(this,{x:1000,y:1000},{url:'assets/ship.png'} ))
-    this.children.push(new Marker(this,{x:3000,y:5000},{url:'assets/ship.png'} ))
-    this.children.push(new Marker(this,{x:1000,y:-4000},{url:'assets/ship.png'} ))
   }
 
   render() {
@@ -156,6 +178,19 @@ export default class Map {
       this.grid.updateNearRegion();
 
     this.ctx.clearRect(0, 0, this.width, this.height);
-    this.children.forEach(e => e.render(this.ctx));
+
+    this.highmap.forEach(e => e.render(this.ctx));
+
+    this.pictures.forEach(e => e.render(this.ctx));
+
+    this.areas.forEach(e => e.render(this.ctx));
+
+    this.markers.forEach(e => e.render(this.ctx));
+
+    this.quests.forEach(e => e.render(this.ctx));
+
+    this.grid.render(this.ctx);
+
+
   }
 }

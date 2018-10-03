@@ -104,7 +104,39 @@ exports.regionFromPosition = function (x, y, CUBSTEP) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var map_js_1 = __webpack_require__(2);
-window.map = new map_js_1.default('world-map');
+var _map = {
+    areas: [
+        {
+            name: "Базовый магазин",
+            position: [-17984, 0, 18683, 2000],
+            color: '#bc743c45'
+        },
+        {
+            name: "Базовый магазин",
+            position: [-0, 0, 0, 2000],
+            color: '#bc243c45'
+        }
+    ],
+    pictures: [
+        {
+            position: [1000, -4000],
+            url: 'assets/ship.png'
+        }
+    ],
+    quests: [
+        {
+            position: [-1500, -4500],
+            url: 'assets/cross.png',
+            name: "Имя точки",
+        },
+        {
+            position: [4000, -4000],
+            url: 'assets/point.png',
+            name: "Имя другой точки",
+        }
+    ]
+};
+window.map = new map_js_1.default('world-map', _map);
 
 
 /***/ }),
@@ -116,11 +148,18 @@ window.map = new map_js_1.default('world-map');
 Object.defineProperty(exports, "__esModule", { value: true });
 var grid_1 = __webpack_require__(3);
 var utils_1 = __webpack_require__(0);
-var marker_1 = __webpack_require__(4);
+var picture_1 = __webpack_require__(6);
+var highmap_1 = __webpack_require__(7);
+var circle_1 = __webpack_require__(5);
 var Map = /** @class */ (function () {
-    function Map(element) {
+    function Map(element, map) {
+        this._map = map;
         this.element = element;
-        this.children = [];
+        this.markers = [];
+        this.areas = [];
+        this.pictures = [];
+        this.highmap = [];
+        this.quests = [];
         this.inited = false;
         this.opened = false;
         this.camera = {
@@ -130,7 +169,23 @@ var Map = /** @class */ (function () {
         };
         this.mouseDown = false;
         this.oldPosition = { x: null, y: null };
+        this.parseMap();
     }
+    Map.prototype.parseMap = function () {
+        var _this = this;
+        (this._map.areas || []).forEach(function (a) {
+            _this.areas.push(new circle_1.default(_this, { x: a.position[0], y: a.position[2] }, a.position[3], a.color, a.name));
+        });
+        (this._map.pictures || []).forEach(function (p) {
+            _this.pictures.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
+        });
+        (this._map.quests || []).forEach(function (p) {
+            _this.quests.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
+        });
+        (this._map.highmap || []).forEach(function (h) {
+            _this.highmap.push(new highmap_1.default(_this, h));
+        });
+    };
     Map.prototype.goToRegion = function (region, zoom) {
         if (region === void 0) { region = this.grid.center; }
         if (zoom)
@@ -224,22 +279,23 @@ var Map = /** @class */ (function () {
         this.width = this.canvas.width;
         this.height = this.canvas.height;
         this.grid = new grid_1.default(this);
-        this.children.push(this.grid);
         this.center = {
             x: this.width / 2,
             y: this.height / 2
         };
         this.registerEvents();
-        this.children.push(new marker_1.default(this, { x: 1000, y: 1000 }, { url: 'assets/ship.png' }));
-        this.children.push(new marker_1.default(this, { x: 3000, y: 5000 }, { url: 'assets/ship.png' }));
-        this.children.push(new marker_1.default(this, { x: 1000, y: -4000 }, { url: 'assets/ship.png' }));
     };
     Map.prototype.render = function () {
         var _this = this;
         if (this.mouseDown)
             this.grid.updateNearRegion();
         this.ctx.clearRect(0, 0, this.width, this.height);
-        this.children.forEach(function (e) { return e.render(_this.ctx); });
+        this.highmap.forEach(function (e) { return e.render(_this.ctx); });
+        this.pictures.forEach(function (e) { return e.render(_this.ctx); });
+        this.areas.forEach(function (e) { return e.render(_this.ctx); });
+        this.markers.forEach(function (e) { return e.render(_this.ctx); });
+        this.quests.forEach(function (e) { return e.render(_this.ctx); });
+        this.grid.render(this.ctx);
     };
     return Map;
 }());
@@ -283,6 +339,7 @@ var Grid = /** @class */ (function () {
             ctx.lineTo(x + _this._width, y);
             if (_this.app.camera.zoom > .1) {
                 ctx.font = 22 - _this.length * 1.4 + "px Comic Sans MS";
+                ctx.fillStyle = '#914f36';
                 ctx.textAlign = "center";
                 ctx.fillText(~~r[0] + "=" + ~~r[1], x + _this._width / 2, y + _this._height / 2);
             }
@@ -298,7 +355,8 @@ exports.default = Grid;
 
 
 /***/ }),
-/* 4 */
+/* 4 */,
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -306,9 +364,57 @@ exports.default = Grid;
 Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = __webpack_require__(0);
 var CUBSTEP = 2000;
-var Marker = /** @class */ (function () {
-    function Marker(app, position, image) {
+var Сircle = /** @class */ (function () {
+    function Сircle(app, position, radius, color, text) {
+        this.app = app;
+        this.ready = true;
+        this.radius = radius;
+        this.color = color;
+        this.text = text;
+        this.move(position.x, position.y);
+    }
+    Сircle.prototype.move = function (x, y) {
+        var _x = (x / CUBSTEP);
+        var _y = (y / CUBSTEP);
+        this.region = utils_1.regionFromPosition(x, y).split('=');
+        this.position = { x: _x, y: _y };
+    };
+    Сircle.prototype.render = function (ctx) {
         var _this = this;
+        if (!this.ready)
+            return false;
+        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
+            return;
+        var radius = this.radius / CUBSTEP * this.app.grid._height;
+        var x = ~~(this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
+        var y = ~~(this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
+        ctx.fillStyle = '#914f36';
+        ctx.textAlign = "center";
+        ctx.fillText("" + this.text, x, y - 20);
+    };
+    return Сircle;
+}());
+exports.default = Сircle;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var utils_1 = __webpack_require__(0);
+var CUBSTEP = 2000;
+var Picture = /** @class */ (function () {
+    function Picture(app, position, image, text) {
+        var _this = this;
+        this.text = text;
         this.app = app;
         this.rawImage = image;
         this.ready = false;
@@ -319,13 +425,13 @@ var Marker = /** @class */ (function () {
         };
         this.move(position.x, position.y);
     }
-    Marker.prototype.move = function (x, y) {
+    Picture.prototype.move = function (x, y) {
         var _x = (x / CUBSTEP);
         var _y = (y / CUBSTEP);
         this.region = utils_1.regionFromPosition(x, y).split('=');
         this.position = { x: _x, y: _y };
     };
-    Marker.prototype.render = function (ctx) {
+    Picture.prototype.render = function (ctx) {
         var _this = this;
         if (!this.ready)
             return false;
@@ -336,10 +442,76 @@ var Marker = /** @class */ (function () {
         var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
         var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
         ctx.drawImage(this.image, x, y, width, height);
+        if (this.text) {
+            ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
+            ctx.fillStyle = '#914f36';
+            ctx.textAlign = "center";
+            ctx.fillText("" + this.text, x, y);
+        }
     };
-    return Marker;
+    return Picture;
 }());
-exports.default = Marker;
+exports.default = Picture;
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var utils_1 = __webpack_require__(0);
+var CUBSTEP = 2000;
+var Highmap = /** @class */ (function () {
+    function Highmap(app, region) {
+        var _this = this;
+        this.app = app;
+        this.ready = false;
+        this.image = new Image();
+        this.image.src = "https://ww.sunnygames.net/terrain/world/main/" + region + "/hm.png";
+        this.image.onload = function () {
+            _this.i = _this.removeBlack(_this.image);
+            _this.ready = true;
+        };
+        var r = region.split('=');
+        this.move(r[0] * CUBSTEP, r[1] * CUBSTEP);
+    }
+    Highmap.prototype.removeBlack = function (img) {
+        var buffer = document.createElement('canvas');
+        var bufferctx = buffer.getContext('2d');
+        bufferctx.drawImage(img, 0, 0);
+        var imageData = bufferctx.getImageData(0, 0, buffer.width, buffer.height);
+        var data = imageData.data;
+        for (var i = 0; i < data.length; i += 4) {
+            if (data[i] + data[i + 1] + data[i + 2] < 10) {
+                data[i + 3] = 0; // alpha
+            }
+        }
+        return imageData;
+        //ctx.putImageData(imageData, 0, 0);
+    };
+    Highmap.prototype.move = function (x, y) {
+        var _x = (x / CUBSTEP);
+        var _y = (y / CUBSTEP);
+        this.region = utils_1.regionFromPosition(x, y).split('=');
+        this.position = { x: _x, y: _y };
+    };
+    Highmap.prototype.render = function (ctx) {
+        var _this = this;
+        if (!this.ready)
+            return false;
+        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
+            return;
+        var height = this.app.grid._height;
+        var width = this.app.grid._width;
+        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
+        var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
+        ctx.putImageData(this.i, x, y, width, height);
+    };
+    return Highmap;
+}());
+exports.default = Highmap;
 
 
 /***/ })

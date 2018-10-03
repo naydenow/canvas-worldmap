@@ -34,6 +34,7 @@ export default class Grid {
 
       if (this.app.camera.zoom > .1) {
         ctx.font      = `${22 - this.length*1.4}px Comic Sans MS`;
+        ctx.fillStyle = '#914f36';
         ctx.textAlign = "center";
         ctx.fillText(`${~~r[0]}=${~~r[1]}`, x + this._width / 2, y + this._height / 2);
       }
