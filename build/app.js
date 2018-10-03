@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -70,8 +70,30 @@
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var map_js_1 = __webpack_require__(1);
-window.map = new map_js_1.default('world-map');
+exports.calcRegion = function (region, length) {
+    var _r = region.split('=').map(function (r) {
+        return +r;
+    });
+    var all = length ? length : 2;
+    var res = [];
+    var h = all * -1;
+    var i = 0;
+    while (h <= all) {
+        var w = all * -1;
+        while (w <= all) {
+            res.push([_r[0] + w, _r[1] + h]);
+            w++;
+        }
+        h++;
+    }
+    return res;
+};
+exports.regionFromPosition = function (x, y, CUBSTEP) {
+    if (CUBSTEP === void 0) { CUBSTEP = 2000; }
+    var _x = CUBSTEP / 2;
+    var _y = _x;
+    return ~~(((x > 0 ? _x : -_x) + x) / CUBSTEP) + "=" + ~~(((y > 0 ? _y : -_y) + y) / CUBSTEP);
+};
 
 
 /***/ }),
@@ -81,8 +103,19 @@ window.map = new map_js_1.default('world-map');
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var grid_1 = __webpack_require__(2);
-var utils_1 = __webpack_require__(3);
+var map_js_1 = __webpack_require__(2);
+window.map = new map_js_1.default('world-map');
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var grid_1 = __webpack_require__(3);
+var utils_1 = __webpack_require__(0);
 var marker_1 = __webpack_require__(4);
 var defLength = 20;
 var Map = /** @class */ (function () {
@@ -207,13 +240,13 @@ exports.default = Map;
 
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var utils_1 = __webpack_require__(3);
+var utils_1 = __webpack_require__(0);
 var defLength = 20;
 var Grid = /** @class */ (function () {
     function Grid(app) {
@@ -245,6 +278,7 @@ var Grid = /** @class */ (function () {
             }
             ctx.moveTo(x, y);
             ctx.lineTo(x, y + _this._height);
+            ctx.strokeStyle = '#bc743c';
             ctx.stroke();
         });
     };
@@ -254,46 +288,13 @@ exports.default = Grid;
 
 
 /***/ }),
-/* 3 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.calcRegion = function (region, length) {
-    var _r = region.split('=').map(function (r) {
-        return +r;
-    });
-    var all = length ? length : 2;
-    var res = [];
-    var h = all * -1;
-    var i = 0;
-    while (h <= all) {
-        var w = all * -1;
-        while (w <= all) {
-            res.push([_r[0] + w, _r[1] + h]);
-            w++;
-        }
-        h++;
-    }
-    return res;
-};
-exports.regionFromPosition = function (x, y, CUBSTEP) {
-    if (CUBSTEP === void 0) { CUBSTEP = 2000; }
-    var _x = CUBSTEP / 2;
-    var _y = _x;
-    return ~~(((x > 0 ? _x : -_x) + x) / CUBSTEP) + "=" + ~~(((y > 0 ? _y : -_y) + y) / CUBSTEP);
-};
-
-
-/***/ }),
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var utils_1 = __webpack_require__(3);
+var utils_1 = __webpack_require__(0);
 var CUBSTEP = 2000;
 var defLength = 20;
 var Marker = /** @class */ (function () {

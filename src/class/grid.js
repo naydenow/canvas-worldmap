@@ -36,6 +36,7 @@ export default class Grid {
 
       ctx.moveTo(x, y);
       ctx.lineTo(x, y + this._height);
+      ctx.strokeStyle = '#bc743c';
       ctx.stroke();
     })
   }
