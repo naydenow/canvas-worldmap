@@ -117,7 +117,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var grid_1 = __webpack_require__(3);
 var utils_1 = __webpack_require__(0);
 var marker_1 = __webpack_require__(4);
-var defLength = 20;
 var Map = /** @class */ (function () {
     function Map(element) {
         this.element = element;
@@ -127,15 +126,17 @@ var Map = /** @class */ (function () {
         this.camera = {
             x: 0,
             y: 0,
-            zoom: 3
+            zoom: 1
         };
         this.mouseDown = false;
         this.oldPosition = { x: null, y: null };
     }
     Map.prototype.goToRegion = function (region, zoom) {
+        if (region === void 0) { region = this.grid.center; }
         if (zoom)
             this.camera.zoom = zoom;
         var r = region.split('=');
+        this.grid.calcProp();
         this.camera.x = r[0] * this.grid._height * -1;
         this.camera.y = r[1] * this.grid._width * -1;
         this.grid.updateNearRegion(this.camera.zoom);
@@ -148,6 +149,10 @@ var Map = /** @class */ (function () {
         this.camera.x = r[0] * this.grid._height * -1;
         this.camera.y = r[1] * this.grid._width * -1;
         this.grid.updateNearRegion(this.camera.zoom);
+    };
+    Map.prototype.zoom = function (z) {
+        if (z === void 0) { z = this.camera.zoom; }
+        this.goToRegion(void 0, z);
     };
     Map.prototype.registerEvents = function () {
         var _this = this;
@@ -163,7 +168,7 @@ var Map = /** @class */ (function () {
                 _this.camera.zoom = 0.8;
             if (_this.camera.zoom > 5)
                 _this.camera.zoom = 5;
-            _this.grid.updateNearRegion(_this.camera.zoom);
+            _this.zoom();
         });
         this.canvas.addEventListener("mousedown", function (e) {
             _this.mouseDown = true;
@@ -225,7 +230,9 @@ var Map = /** @class */ (function () {
             y: this.height / 2
         };
         this.registerEvents();
-        this.children.push(new marker_1.default(this, { x: 4000, y: 0 }, { url: 'assets/ship.png' }));
+        this.children.push(new marker_1.default(this, { x: 1000, y: 1000 }, { url: 'assets/ship.png' }));
+        this.children.push(new marker_1.default(this, { x: 3000, y: 5000 }, { url: 'assets/ship.png' }));
+        this.children.push(new marker_1.default(this, { x: 1000, y: -4000 }, { url: 'assets/ship.png' }));
     };
     Map.prototype.render = function () {
         var _this = this;
@@ -247,32 +254,35 @@ exports.default = Map;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = __webpack_require__(0);
-var defLength = 20;
+var defLength = 10;
 var Grid = /** @class */ (function () {
     function Grid(app) {
         this.app = app;
         this.regions = [];
         this.center = '0=0';
+        this.calcProp();
         this.updateNearRegion(app.camera.zoom);
     }
-    Grid.prototype.updateNearRegion = function (zoom) {
-        if (zoom === void 0) { zoom = this.app.camera.zoom; }
-        this.length = defLength / zoom;
+    Grid.prototype.calcProp = function () {
+        this.length = defLength / this.app.camera.zoom;
         this._height = ~~(this.app.height / this.length + .5);
         this._width = ~~(this.app.width / this.length + .5);
+    };
+    Grid.prototype.updateNearRegion = function (zoom) {
+        if (zoom === void 0) { zoom = this.app.camera.zoom; }
         this.center = utils_1.regionFromPosition(this.app.camera.x * -1, this.app.camera.y * -1, (this._width + this._height) / 2);
         this.regions = utils_1.calcRegion(this.center, ~~this.length);
     };
     Grid.prototype.render = function (ctx) {
         var _this = this;
         this.regions.forEach(function (r) {
-            var x = ~~(-_this._width / 2 + _this.app.camera.x + _this.app.center.x + r[0] * _this._width + .5);
-            var y = ~~(-_this._height / 2 + _this.app.camera.y + _this.app.center.y + r[1] * _this._height + .5);
+            var x = ~~(-_this._width / 2 + _this.app.camera.x + _this.app.center.x + (r[0] * _this._width) + .5);
+            var y = ~~(-_this._height / 2 + _this.app.camera.y + _this.app.center.y + (r[1] * _this._height) + .5);
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.lineTo(x + _this._width, y);
-            if (_this.app.camera.zoom > 1) {
-                ctx.font = 20 - _this.length + "px Comic Sans MS";
+            if (_this.app.camera.zoom > .1) {
+                ctx.font = 22 - _this.length * 1.4 + "px Comic Sans MS";
                 ctx.textAlign = "center";
                 ctx.fillText(~~r[0] + "=" + ~~r[1], x + _this._width / 2, y + _this._height / 2);
             }
@@ -296,7 +306,6 @@ exports.default = Grid;
 Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = __webpack_require__(0);
 var CUBSTEP = 2000;
-var defLength = 20;
 var Marker = /** @class */ (function () {
     function Marker(app, position, image) {
         var _this = this;
@@ -311,11 +320,10 @@ var Marker = /** @class */ (function () {
         this.move(position.x, position.y);
     }
     Marker.prototype.move = function (x, y) {
-        var _x = (((x > 0 ? CUBSTEP / 2 : -CUBSTEP / 2) + x) / CUBSTEP);
-        var _y = (((y > 0 ? CUBSTEP / 2 : -CUBSTEP / 2) + y) / CUBSTEP);
+        var _x = (x / CUBSTEP);
+        var _y = (y / CUBSTEP);
         this.region = utils_1.regionFromPosition(x, y).split('=');
         this.position = { x: _x, y: _y };
-        console.log(this);
     };
     Marker.prototype.render = function (ctx) {
         var _this = this;
@@ -325,8 +333,8 @@ var Marker = /** @class */ (function () {
             return;
         var height = this.image.height * this.app.camera.zoom;
         var width = this.image.width * this.app.camera.zoom;
-        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + this.position.x * width + .5);
-        var y = ~~(this.app.camera.y + this.app.center.y + this.position.y * height + .5);
+        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
+        var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
         ctx.drawImage(this.image, x, y, width, height);
     };
     return Marker;

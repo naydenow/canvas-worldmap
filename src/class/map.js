@@ -2,8 +2,6 @@ import Grid from './grid';
 import {regionFromPosition} from './utils';
 import Marker from './marker';
 
-const defLength = 20;
-
 export default class Map {
   constructor(element) {
     this.element  = element;
@@ -13,21 +11,24 @@ export default class Map {
     this.camera   = {
       x:    0,
       y:    0,
-      zoom: 3
+      zoom: 1
     };
 
     this.mouseDown   = false;
     this.oldPosition = {x: null, y: null};
   }
 
-  goToRegion(region, zoom) {
+  goToRegion(region = this.grid.center, zoom) {
     if (zoom)
       this.camera.zoom = zoom;
 
     let r = region.split('=');
 
+    this.grid.calcProp();
+
     this.camera.x = r[0] * this.grid._height * -1;
     this.camera.y = r[1] * this.grid._width * -1;
+
     this.grid.updateNearRegion(this.camera.zoom);
   }
 
@@ -43,7 +44,12 @@ export default class Map {
     this.grid.updateNearRegion(this.camera.zoom);
   }
 
+  zoom(z = this.camera.zoom){
+    this.goToRegion(void 0,z);
+  }
+
   registerEvents() {
+
     this.canvas.addEventListener("wheel", (e) => {
       var delta = e.deltaY || e.detail || e.wheelDelta;
 
@@ -59,8 +65,9 @@ export default class Map {
       if (this.camera.zoom > 5)
         this.camera.zoom = 5;
 
-      this.grid.updateNearRegion(this.camera.zoom)
+      this.zoom();
     });
+
 
     this.canvas.addEventListener("mousedown", (e) => {
       this.mouseDown = true;
@@ -139,7 +146,9 @@ export default class Map {
 
     this.registerEvents();
 
-    this.children.push(new Marker(this,{x:4000,y:0},{url:'assets/ship.png'} ))
+    this.children.push(new Marker(this,{x:1000,y:1000},{url:'assets/ship.png'} ))
+    this.children.push(new Marker(this,{x:3000,y:5000},{url:'assets/ship.png'} ))
+    this.children.push(new Marker(this,{x:1000,y:-4000},{url:'assets/ship.png'} ))
   }
 
   render() {

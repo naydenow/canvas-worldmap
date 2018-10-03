@@ -1,6 +1,5 @@
 import {calcRegion, regionFromPosition} from './utils';
 const CUBSTEP = 2000;
-const defLength = 20;
 
 export default class Marker {
   constructor(app, position, image) {
@@ -17,13 +16,11 @@ export default class Marker {
   }
 
   move(x, y) {
-    let _x = ( ( (x > 0 ? CUBSTEP/2 : -CUBSTEP/2) + x ) / CUBSTEP );
-    let _y =  (( (y > 0 ? CUBSTEP/2 : -CUBSTEP/2) + y ) / CUBSTEP );
+    let _x = ( x  / CUBSTEP );
+    let _y =  (y  / CUBSTEP ) ;
 
     this.region   = regionFromPosition(x, y).split('=');
     this.position = {x:_x, y:_y};
-
-    console.log(this)
   }
 
   render(ctx) {
@@ -36,8 +33,8 @@ export default class Marker {
     let height = this.image.height * this.app.camera.zoom;
     let width  = this.image.width * this.app.camera.zoom;
 
-    let x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + this.position.x * width + .5);
-    let y = ~~(this.app.camera.y + this.app.center.y + this.position.y * height + .5);
+    let x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height )+ .5);
+    let y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
 
     ctx.drawImage(this.image, x, y, width, height);
   }
