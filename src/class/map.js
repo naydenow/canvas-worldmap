@@ -1,5 +1,6 @@
 import Grid from './grid';
 import {regionFromPosition} from './utils';
+import Marker from './marker';
 
 const defLength = 20;
 
@@ -25,7 +26,7 @@ export default class Map {
 
     let r = region.split('=');
 
-    this.camera.x = r[0] * this.grid._heigth * -1;
+    this.camera.x = r[0] * this.grid._height * -1;
     this.camera.y = r[1] * this.grid._width * -1;
     this.grid.updateNearRegion(this.camera.zoom);
   }
@@ -36,7 +37,7 @@ export default class Map {
 
     let r = regionFromPosition(x, y).split('=');
 
-    this.camera.x = r[0] * this.grid._heigth * -1;
+    this.camera.x = r[0] * this.grid._height * -1;
     this.camera.y = r[1] * this.grid._width * -1;
 
     this.grid.updateNearRegion(this.camera.zoom);
@@ -137,6 +138,8 @@ export default class Map {
     };
 
     this.registerEvents();
+
+    this.children.push(new Marker(this,{x:4000,y:0},{url:'assets/ship.png'} ))
   }
 
   render() {

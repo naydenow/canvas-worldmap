@@ -83,6 +83,7 @@ window.map = new map_js_1.default('world-map');
 Object.defineProperty(exports, "__esModule", { value: true });
 var grid_1 = __webpack_require__(2);
 var utils_1 = __webpack_require__(3);
+var marker_1 = __webpack_require__(4);
 var defLength = 20;
 var Map = /** @class */ (function () {
     function Map(element) {
@@ -102,7 +103,7 @@ var Map = /** @class */ (function () {
         if (zoom)
             this.camera.zoom = zoom;
         var r = region.split('=');
-        this.camera.x = r[0] * this.grid._heigth * -1;
+        this.camera.x = r[0] * this.grid._height * -1;
         this.camera.y = r[1] * this.grid._width * -1;
         this.grid.updateNearRegion(this.camera.zoom);
     };
@@ -111,7 +112,7 @@ var Map = /** @class */ (function () {
         if (zoom)
             this.camera.zoom = zoom;
         var r = utils_1.regionFromPosition(x, y).split('=');
-        this.camera.x = r[0] * this.grid._heigth * -1;
+        this.camera.x = r[0] * this.grid._height * -1;
         this.camera.y = r[1] * this.grid._width * -1;
         this.grid.updateNearRegion(this.camera.zoom);
     };
@@ -191,6 +192,7 @@ var Map = /** @class */ (function () {
             y: this.height / 2
         };
         this.registerEvents();
+        this.children.push(new marker_1.default(this, { x: 4000, y: 0 }, { url: 'assets/ship.png' }));
     };
     Map.prototype.render = function () {
         var _this = this;
@@ -223,26 +225,26 @@ var Grid = /** @class */ (function () {
     Grid.prototype.updateNearRegion = function (zoom) {
         if (zoom === void 0) { zoom = this.app.camera.zoom; }
         this.length = defLength / zoom;
-        this._heigth = ~~(this.app.height / this.length + .5);
+        this._height = ~~(this.app.height / this.length + .5);
         this._width = ~~(this.app.width / this.length + .5);
-        this.center = utils_1.regionFromPosition(this.app.camera.x * -1, this.app.camera.y * -1, (this._width + this._heigth) / 2);
+        this.center = utils_1.regionFromPosition(this.app.camera.x * -1, this.app.camera.y * -1, (this._width + this._height) / 2);
         this.regions = utils_1.calcRegion(this.center, ~~this.length);
     };
     Grid.prototype.render = function (ctx) {
         var _this = this;
         this.regions.forEach(function (r) {
             var x = ~~(-_this._width / 2 + _this.app.camera.x + _this.app.center.x + r[0] * _this._width + .5);
-            var y = ~~(-_this._heigth / 2 + _this.app.camera.y + _this.app.center.x + r[1] * _this._heigth + .5);
+            var y = ~~(-_this._height / 2 + _this.app.camera.y + _this.app.center.y + r[1] * _this._height + .5);
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.lineTo(x + _this._width, y);
             if (_this.app.camera.zoom > 1) {
                 ctx.font = 20 - _this.length + "px Comic Sans MS";
                 ctx.textAlign = "center";
-                ctx.fillText(~~r[0] + "=" + ~~r[1], x + _this._width / 2, y + _this._heigth / 2);
+                ctx.fillText(~~r[0] + "=" + ~~r[1], x + _this._width / 2, y + _this._height / 2);
             }
             ctx.moveTo(x, y);
-            ctx.lineTo(x, y + _this._heigth);
+            ctx.lineTo(x, y + _this._height);
             ctx.stroke();
         });
     };
@@ -282,6 +284,53 @@ exports.regionFromPosition = function (x, y, CUBSTEP) {
     var _y = _x;
     return ~~(((x > 0 ? _x : -_x) + x) / CUBSTEP) + "=" + ~~(((y > 0 ? _y : -_y) + y) / CUBSTEP);
 };
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var utils_1 = __webpack_require__(3);
+var CUBSTEP = 2000;
+var defLength = 20;
+var Marker = /** @class */ (function () {
+    function Marker(app, position, image) {
+        var _this = this;
+        this.app = app;
+        this.rawImage = image;
+        this.ready = false;
+        this.image = new Image();
+        this.image.src = image.url;
+        this.image.onload = function () {
+            _this.ready = true;
+        };
+        this.move(position.x, position.y);
+    }
+    Marker.prototype.move = function (x, y) {
+        var _x = (((x > 0 ? CUBSTEP / 2 : -CUBSTEP / 2) + x) / CUBSTEP);
+        var _y = (((y > 0 ? CUBSTEP / 2 : -CUBSTEP / 2) + y) / CUBSTEP);
+        this.region = utils_1.regionFromPosition(x, y).split('=');
+        this.position = { x: _x, y: _y };
+        console.log(this);
+    };
+    Marker.prototype.render = function (ctx) {
+        var _this = this;
+        if (!this.ready)
+            return false;
+        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
+            return;
+        var height = this.image.height * this.app.camera.zoom;
+        var width = this.image.width * this.app.camera.zoom;
+        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + this.position.x * width + .5);
+        var y = ~~(this.app.camera.y + this.app.center.y + this.position.y * height + .5);
+        ctx.drawImage(this.image, x, y, width, height);
+    };
+    return Marker;
+}());
+exports.default = Marker;
 
 
 /***/ })
