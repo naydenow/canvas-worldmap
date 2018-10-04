@@ -7,16 +7,113 @@
     <style>
         .world-map {
             width: 800px;
-            height: 600px;
+            height: 604px;
             background-image: url("assets/bg.png");
         }
+
         .world-map-wrapper {
             padding: 10px;
+            height: 580px;
+            width: 580px;
+            float: left;
         }
 
         #world-map {
             border: 2px solid #deb376;
         }
+
+        .world-map-info {
+            height: 100%;
+            float: right;
+            width: 180px;
+            padding: 10px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        .world-map-control {
+            height: 239px;
+            margin-top: 20px;
+        }
+
+        .world-map-objects {
+            height: 240px;
+            margin-top: 54px;
+            overflow-y: scroll;
+            width: 176px;
+        }
+
+        .world-map-objects::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .world-map-objects::-webkit-scrollbar-thumb {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+            background-color: #532e0473;
+        }
+
+        /* The container */
+        .container {
+            display: block;
+            position: relative;
+            padding-left: 35px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            height: 25px;
+            line-height: 25px;
+        }
+
+        /* Hide the browser's default checkbox */
+        .container input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Create a custom checkbox */
+        .checkmark {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 20px;
+            width: 20px;
+            outline-color: #593209;
+            outline-width: 2px;
+            outline-style: solid;
+        }
+
+        /* Create the checkmark/indicator (hidden when not checked) */
+        .checkmark:after {
+            content: "";
+            position: absolute;
+            display: none;
+        }
+
+        /* Show the checkmark when checked */
+        .container input:checked ~ .checkmark:after {
+            display: block;
+        }
+
+        /* Style the checkmark/indicator */
+        .container .checkmark:after {
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid #593209;
+            border-width: 0 2px 2px 0;
+            -webkit-transform: rotate(45deg);
+            -ms-transform: rotate(45deg);
+            transform: rotate(45deg);
+        }
+
     </style>
 </head>
 <body>
@@ -25,11 +122,37 @@
     <div class="world-map-wrapper">
         <canvas width="580" height="580" id="world-map"></canvas>
     </div>
-</div>
+    <div class="world-map-info">
+        <div class="world-map-control">
+            <label class="container">Торговая зона
+                <input type="checkbox" id="a" checked="checked" onchange="map.check(this)">
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">Задания
+                <input type="checkbox" id="q" checked="checked" onchange="map.check(this)">
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">Корабли
+                <input type="checkbox" id="s" checked="checked" onchange="map.check(this)">
+                <span class="checkmark"></span>
+            </label>
+            <label class="container">Порталы
+                <input type="checkbox" id="p" checked="checked" onchange="map.check(this)">
+                <span class="checkmark"></span>
+            </label>
+        </div>
+        <div class="world-map-objects">
 
+        </div>
+
+    </div>
+    <div class="clear"></div>
+</div>
 
 
 </body>
 </html>
 
-<script>map.open()</script>
+<script>map.open();
+
+</script>

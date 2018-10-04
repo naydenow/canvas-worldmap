@@ -3,19 +3,29 @@ import {regionFromPosition} from './utils';
 import Picture from './picture';
 import Highmap from './highmap';
 import Сircle from './circle';
+import renderShips from './render.ships';
 
 export default class Map {
   constructor(element, map) {
-    this._map     = map;
-    this.element  = element;
-    this.markers  = [];
-    this.areas    = [];
+    this._map    = map;
+    this.element = element;
+
+    this.canRenderShips     = true;
+    this.canRenderAreas     = true;
+    this.canRenderQuests    = true;
+    this.canRenderTeleports = true;
+
+    this.ships     = [];
+    this.areas     = [];
+    this.quests    = [];
+    this.teleports = [];
+
     this.pictures = [];
     this.highmap  = [];
-    this.quests   = [];
-    this.inited   = false;
-    this.opened   = false;
-    this.camera   = {
+
+    this.inited = false;
+    this.opened = false;
+    this.camera = {
       x:    0,
       y:    0,
       zoom: 1
@@ -24,6 +34,22 @@ export default class Map {
     this.mouseDown   = false;
     this.oldPosition = {x: null, y: null};
     this.parseMap();
+  }
+
+  setShips(ships) {
+    this.ships = ships;
+  }
+
+  check(checkbox) {
+    if (checkbox.id === 'q') {
+      this.canRenderQuests = !this.canRenderQuests;
+    } else if (checkbox.id === 'p') {
+      this.canRenderTeleports = !this.canRenderTeleports;
+    } else if (checkbox.id === 's') {
+      this.canRenderShips = !this.canRenderShips;
+    } else if (checkbox.id === 'a') {
+      this.canRenderAreas = !this.canRenderAreas;
+    }
   }
 
   parseMap() {
@@ -37,6 +63,10 @@ export default class Map {
 
     (this._map.quests || []).forEach(p => {
       this.quests.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
+    });
+
+    (this._map.teleports || []).forEach(p => {
+      this.teleports.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
     });
 
     (this._map.highmap || []).forEach(h => {
@@ -77,7 +107,6 @@ export default class Map {
   }
 
   registerEvents() {
-
     this.canvas.addEventListener("wheel", (e) => {
       var delta = e.deltaY || e.detail || e.wheelDelta;
 
@@ -179,15 +208,16 @@ export default class Map {
 
     this.ctx.clearRect(0, 0, this.width, this.height);
 
-    this.highmap.forEach(e => e.render(this.ctx));
-
     this.pictures.forEach(e => e.render(this.ctx));
 
-    this.areas.forEach(e => e.render(this.ctx));
+    this.canRenderTeleports && this.teleports.forEach(e => e.render(this.ctx));
 
-    this.markers.forEach(e => e.render(this.ctx));
+    this.canRenderAreas && this.areas.forEach(e => e.render(this.ctx));
 
-    this.quests.forEach(e => e.render(this.ctx));
+    this.canRenderQuests && this.quests.forEach(e => e.render(this.ctx));
+
+    this.canRenderShips && renderShips(this,this.ctx);
+
 
     this.grid.render(this.ctx);
 

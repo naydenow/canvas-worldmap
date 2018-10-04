@@ -117,12 +117,14 @@ var _map = {
             color: '#bc243c45'
         }
     ],
-    pictures: [
+    teleports: [
         {
-            position: [1000, -4000],
-            url: 'assets/ship.png'
+            name: "Телепорт в ад",
+            position: [0, 0],
+            url: 'assets/teleport.png'
         }
     ],
+    pictures: [],
     quests: [
         {
             position: [-1500, -4500],
@@ -137,6 +139,32 @@ var _map = {
     ]
 };
 window.map = new map_js_1.default('world-map', _map);
+var s = {
+    "BOT-11AB5": {
+        name: 'Вася',
+        state: {
+            a: 15,
+            p: [2000, 0, 0]
+        }
+    }, "BOT-12AB5": {
+        name: 'Вася2',
+        state: {
+            a: 15,
+            p: [1000, 0, 1000]
+        }
+    }, "BOT-13AB5": {
+        name: 'Вася3'
+    }
+};
+map.setShips(s);
+setInterval(function () {
+    var time = Date.now() * 0.0005;
+    for (var k in s) {
+        s[k].state && (s[k].state.p[2] += Math.sin(time * 0.7) * 20);
+    }
+    s["BOT-11AB5"].state.a += Math.sin(time * 0.7) * 5;
+    s["BOT-12AB5"].state.a += Math.cos(time * 0.7) * 5;
+}, 1000 / 60);
 
 
 /***/ }),
@@ -148,18 +176,24 @@ window.map = new map_js_1.default('world-map', _map);
 Object.defineProperty(exports, "__esModule", { value: true });
 var grid_1 = __webpack_require__(3);
 var utils_1 = __webpack_require__(0);
-var picture_1 = __webpack_require__(6);
-var highmap_1 = __webpack_require__(7);
-var circle_1 = __webpack_require__(5);
+var picture_1 = __webpack_require__(4);
+var highmap_1 = __webpack_require__(5);
+var circle_1 = __webpack_require__(6);
+var render_ships_1 = __webpack_require__(7);
 var Map = /** @class */ (function () {
     function Map(element, map) {
         this._map = map;
         this.element = element;
-        this.markers = [];
+        this.canRenderShips = true;
+        this.canRenderAreas = true;
+        this.canRenderQuests = true;
+        this.canRenderTeleports = true;
+        this.ships = [];
         this.areas = [];
+        this.quests = [];
+        this.teleports = [];
         this.pictures = [];
         this.highmap = [];
-        this.quests = [];
         this.inited = false;
         this.opened = false;
         this.camera = {
@@ -171,6 +205,23 @@ var Map = /** @class */ (function () {
         this.oldPosition = { x: null, y: null };
         this.parseMap();
     }
+    Map.prototype.setShips = function (ships) {
+        this.ships = ships;
+    };
+    Map.prototype.check = function (checkbox) {
+        if (checkbox.id === 'q') {
+            this.canRenderQuests = !this.canRenderQuests;
+        }
+        else if (checkbox.id === 'p') {
+            this.canRenderTeleports = !this.canRenderTeleports;
+        }
+        else if (checkbox.id === 's') {
+            this.canRenderShips = !this.canRenderShips;
+        }
+        else if (checkbox.id === 'a') {
+            this.canRenderAreas = !this.canRenderAreas;
+        }
+    };
     Map.prototype.parseMap = function () {
         var _this = this;
         (this._map.areas || []).forEach(function (a) {
@@ -181,6 +232,9 @@ var Map = /** @class */ (function () {
         });
         (this._map.quests || []).forEach(function (p) {
             _this.quests.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
+        });
+        (this._map.teleports || []).forEach(function (p) {
+            _this.teleports.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
         });
         (this._map.highmap || []).forEach(function (h) {
             _this.highmap.push(new highmap_1.default(_this, h));
@@ -290,11 +344,11 @@ var Map = /** @class */ (function () {
         if (this.mouseDown)
             this.grid.updateNearRegion();
         this.ctx.clearRect(0, 0, this.width, this.height);
-        this.highmap.forEach(function (e) { return e.render(_this.ctx); });
         this.pictures.forEach(function (e) { return e.render(_this.ctx); });
-        this.areas.forEach(function (e) { return e.render(_this.ctx); });
-        this.markers.forEach(function (e) { return e.render(_this.ctx); });
-        this.quests.forEach(function (e) { return e.render(_this.ctx); });
+        this.canRenderTeleports && this.teleports.forEach(function (e) { return e.render(_this.ctx); });
+        this.canRenderAreas && this.areas.forEach(function (e) { return e.render(_this.ctx); });
+        this.canRenderQuests && this.quests.forEach(function (e) { return e.render(_this.ctx); });
+        this.canRenderShips && render_ships_1.default(this, this.ctx);
         this.grid.render(this.ctx);
     };
     return Map;
@@ -355,55 +409,7 @@ exports.default = Grid;
 
 
 /***/ }),
-/* 4 */,
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var utils_1 = __webpack_require__(0);
-var CUBSTEP = 2000;
-var Сircle = /** @class */ (function () {
-    function Сircle(app, position, radius, color, text) {
-        this.app = app;
-        this.ready = true;
-        this.radius = radius;
-        this.color = color;
-        this.text = text;
-        this.move(position.x, position.y);
-    }
-    Сircle.prototype.move = function (x, y) {
-        var _x = (x / CUBSTEP);
-        var _y = (y / CUBSTEP);
-        this.region = utils_1.regionFromPosition(x, y).split('=');
-        this.position = { x: _x, y: _y };
-    };
-    Сircle.prototype.render = function (ctx) {
-        var _this = this;
-        if (!this.ready)
-            return false;
-        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
-            return;
-        var radius = this.radius / CUBSTEP * this.app.grid._height;
-        var x = ~~(this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
-        var y = ~~(this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
-        ctx.fillStyle = '#914f36';
-        ctx.textAlign = "center";
-        ctx.fillText("" + this.text, x, y - 20);
-    };
-    return Сircle;
-}());
-exports.default = Сircle;
-
-
-/***/ }),
-/* 6 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -419,17 +425,23 @@ var Picture = /** @class */ (function () {
         this.rawImage = image;
         this.ready = false;
         this.image = new Image();
+        this.angle = 1;
         this.image.src = image.url;
+        this.needRotate = false;
         this.image.onload = function () {
             _this.ready = true;
         };
         this.move(position.x, position.y);
     }
-    Picture.prototype.move = function (x, y) {
+    Picture.prototype.move = function (x, y, a) {
         var _x = (x / CUBSTEP);
         var _y = (y / CUBSTEP);
         this.region = utils_1.regionFromPosition(x, y).split('=');
         this.position = { x: _x, y: _y };
+        if (a && a !== this.angle) {
+            this.angle = a;
+            this.needRotate = true;
+        }
     };
     Picture.prototype.render = function (ctx) {
         var _this = this;
@@ -441,7 +453,17 @@ var Picture = /** @class */ (function () {
         var width = this.image.width * this.app.camera.zoom;
         var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
         var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
+        ctx.save();
+        ctx.beginPath();
+        if (this.needRotate) {
+            ctx.translate(x + width / 2, y + height / 2);
+            ctx.rotate(this.angle * Math.PI / 180);
+            ctx.translate(-(x + width / 2), -(y + height / 2));
+            this.needRotate = false;
+        }
         ctx.drawImage(this.image, x, y, width, height);
+        ctx.closePath();
+        ctx.restore();
         if (this.text) {
             ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
             ctx.fillStyle = '#914f36';
@@ -455,7 +477,7 @@ exports.default = Picture;
 
 
 /***/ }),
-/* 7 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -512,6 +534,76 @@ var Highmap = /** @class */ (function () {
     return Highmap;
 }());
 exports.default = Highmap;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var utils_1 = __webpack_require__(0);
+var CUBSTEP = 2000;
+var Сircle = /** @class */ (function () {
+    function Сircle(app, position, radius, color, text) {
+        this.app = app;
+        this.ready = true;
+        this.radius = radius;
+        this.color = color;
+        this.text = text;
+        this.move(position.x, position.y);
+    }
+    Сircle.prototype.move = function (x, y) {
+        var _x = (x / CUBSTEP);
+        var _y = (y / CUBSTEP);
+        this.region = utils_1.regionFromPosition(x, y).split('=');
+        this.position = { x: _x, y: _y };
+    };
+    Сircle.prototype.render = function (ctx) {
+        var _this = this;
+        if (!this.ready)
+            return false;
+        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
+            return;
+        var radius = this.radius / CUBSTEP * this.app.grid._height;
+        var x = ~~(this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
+        var y = ~~(this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
+        ctx.fillStyle = '#914f36';
+        ctx.textAlign = "center";
+        ctx.fillText("" + this.text, x, y - 20);
+    };
+    return Сircle;
+}());
+exports.default = Сircle;
+
+
+/***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var picture_1 = __webpack_require__(4);
+var player = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/ship.png' });
+function default_1(app, ctx) {
+    // console.log(app.ships)
+    for (var key in app.ships) {
+        var ship = app.ships[key];
+        if (!ship.state)
+            continue;
+        player.app = app;
+        player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
+        player.render(ctx);
+    }
+}
+exports.default = default_1;
 
 
 /***/ })
