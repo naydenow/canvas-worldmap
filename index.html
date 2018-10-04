@@ -55,7 +55,7 @@
         }
 
         /* The container */
-        .container {
+        .world-map-control > .container {
             display: block;
             position: relative;
             padding-left: 35px;
@@ -71,14 +71,14 @@
         }
 
         /* Hide the browser's default checkbox */
-        .container input {
+        .world-map-control > .container input {
             position: absolute;
             opacity: 0;
             cursor: pointer;
         }
 
         /* Create a custom checkbox */
-        .checkmark {
+        .world-map-control > .container .checkmark {
             position: absolute;
             top: 0;
             left: 0;
@@ -90,19 +90,19 @@
         }
 
         /* Create the checkmark/indicator (hidden when not checked) */
-        .checkmark:after {
+        .world-map-control > .container .checkmark:after {
             content: "";
             position: absolute;
             display: none;
         }
 
         /* Show the checkmark when checked */
-        .container input:checked ~ .checkmark:after {
+        .world-map-control > .container input:checked ~ .checkmark:after {
             display: block;
         }
 
         /* Style the checkmark/indicator */
-        .container .checkmark:after {
+        .world-map-control > .container .checkmark:after {
             left: 7px;
             top: 3px;
             width: 5px;

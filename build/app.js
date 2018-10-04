@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 1);
+/******/ 	return __webpack_require__(__webpack_require__.s = 2);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -103,7 +103,75 @@ exports.regionFromPosition = function (x, y, CUBSTEP) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var map_js_1 = __webpack_require__(2);
+var utils_1 = __webpack_require__(0);
+var CUBSTEP = 2000;
+var Picture = /** @class */ (function () {
+    function Picture(app, position, image, text) {
+        var _this = this;
+        this.text = text;
+        this.app = app;
+        this.rawImage = image;
+        this.ready = false;
+        this.image = new Image();
+        this.angle = 1;
+        this.image.src = image.url;
+        this.needRotate = false;
+        this.image.onload = function () {
+            _this.ready = true;
+        };
+        this.move(position.x, position.y);
+    }
+    Picture.prototype.move = function (x, y, a) {
+        var _x = (x / CUBSTEP);
+        var _y = (y / CUBSTEP);
+        this.region = utils_1.regionFromPosition(x, y).split('=');
+        this.position = { x: _x, y: _y };
+        if (a && a !== this.angle) {
+            this.angle = a;
+            this.needRotate = true;
+        }
+    };
+    Picture.prototype.render = function (ctx) {
+        var _this = this;
+        if (!this.ready)
+            return false;
+        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
+            return;
+        var height = this.image.height * this.app.camera.zoom;
+        var width = this.image.width * this.app.camera.zoom;
+        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
+        var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
+        ctx.save();
+        ctx.beginPath();
+        if (this.needRotate) {
+            ctx.translate(x + width / 2, y + height / 2);
+            ctx.rotate(this.angle * Math.PI / 180);
+            ctx.translate(-(x + width / 2), -(y + height / 2));
+            this.needRotate = false;
+        }
+        ctx.drawImage(this.image, x, y, width, height);
+        ctx.closePath();
+        ctx.restore();
+        if (this.text) {
+            ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
+            ctx.fillStyle = '#914f36';
+            ctx.textAlign = "center";
+            ctx.fillText("" + this.text, x, y);
+        }
+    };
+    return Picture;
+}());
+exports.default = Picture;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var map_js_1 = __webpack_require__(3);
 var _map = {
     areas: [
         {
@@ -168,15 +236,15 @@ setInterval(function () {
 
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var grid_1 = __webpack_require__(3);
+var grid_1 = __webpack_require__(4);
 var utils_1 = __webpack_require__(0);
-var picture_1 = __webpack_require__(4);
+var picture_1 = __webpack_require__(1);
 var highmap_1 = __webpack_require__(5);
 var circle_1 = __webpack_require__(6);
 var render_ships_1 = __webpack_require__(7);
@@ -357,7 +425,7 @@ exports.default = Map;
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -406,74 +474,6 @@ var Grid = /** @class */ (function () {
     return Grid;
 }());
 exports.default = Grid;
-
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var utils_1 = __webpack_require__(0);
-var CUBSTEP = 2000;
-var Picture = /** @class */ (function () {
-    function Picture(app, position, image, text) {
-        var _this = this;
-        this.text = text;
-        this.app = app;
-        this.rawImage = image;
-        this.ready = false;
-        this.image = new Image();
-        this.angle = 1;
-        this.image.src = image.url;
-        this.needRotate = false;
-        this.image.onload = function () {
-            _this.ready = true;
-        };
-        this.move(position.x, position.y);
-    }
-    Picture.prototype.move = function (x, y, a) {
-        var _x = (x / CUBSTEP);
-        var _y = (y / CUBSTEP);
-        this.region = utils_1.regionFromPosition(x, y).split('=');
-        this.position = { x: _x, y: _y };
-        if (a && a !== this.angle) {
-            this.angle = a;
-            this.needRotate = true;
-        }
-    };
-    Picture.prototype.render = function (ctx) {
-        var _this = this;
-        if (!this.ready)
-            return false;
-        if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
-            return;
-        var height = this.image.height * this.app.camera.zoom;
-        var width = this.image.width * this.app.camera.zoom;
-        var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
-        var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
-        ctx.save();
-        ctx.beginPath();
-        if (this.needRotate) {
-            ctx.translate(x + width / 2, y + height / 2);
-            ctx.rotate(this.angle * Math.PI / 180);
-            ctx.translate(-(x + width / 2), -(y + height / 2));
-            this.needRotate = false;
-        }
-        ctx.drawImage(this.image, x, y, width, height);
-        ctx.closePath();
-        ctx.restore();
-        if (this.text) {
-            ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
-            ctx.fillStyle = '#914f36';
-            ctx.textAlign = "center";
-            ctx.fillText("" + this.text, x, y);
-        }
-    };
-    return Picture;
-}());
-exports.default = Picture;
 
 
 /***/ }),
@@ -590,7 +590,7 @@ exports.default = Сircle;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var picture_1 = __webpack_require__(4);
+var picture_1 = __webpack_require__(1);
 var player = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/ship.png' });
 function default_1(app, ctx) {
     // console.log(app.ships)
