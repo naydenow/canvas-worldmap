@@ -3,12 +3,12 @@ import {calcRegion, regionFromPosition} from './utils';
 const CUBSTEP = 2000;
 
 export default class Сircle {
-  constructor(app, position, radius, color,text) {
+  constructor(app, position, radius, color, text) {
     this.app    = app;
     this.ready  = true;
     this.radius = radius;
     this.color  = color;
-    this.text = text;
+    this.text   = text;
     this.move(position.x, position.y);
   }
 
@@ -37,10 +37,12 @@ export default class Сircle {
     ctx.fill();
 
 
-    ctx.font      = `${22 - this.app.grid.length*1.4}px Comic Sans MS`;
-    ctx.fillStyle = '#914f36';
-    ctx.textAlign = "center";
-    ctx.fillText(`${this.text}`, x , y - 20);
+    if (this.app.canRenderText) {
+      ctx.font      = `${22 - this.app.grid.length * 1.4}px Comic Sans MS`;
+      ctx.fillStyle = '#914f36';
+      ctx.textAlign = "center";
+      ctx.fillText(`${this.text}`, x, y - 20);
+    }
 
 
   }

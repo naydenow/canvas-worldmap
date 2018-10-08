@@ -106,8 +106,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = __webpack_require__(0);
 var CUBSTEP = 2000;
 var Picture = /** @class */ (function () {
-    function Picture(app, position, image, text) {
+    function Picture(app, position, image, text, canZoom) {
+        if (canZoom === void 0) { canZoom = true; }
         var _this = this;
+        this.canZoom = canZoom;
         this.text = text;
         this.app = app;
         this.rawImage = image;
@@ -137,8 +139,8 @@ var Picture = /** @class */ (function () {
             return false;
         if (!this.app.grid.regions.some(function (r) { return r[0] == _this.region[0] && r[1] == _this.region[1]; }))
             return;
-        var height = this.image.height * this.app.camera.zoom;
-        var width = this.image.width * this.app.camera.zoom;
+        var height = this.image.height * (this.canZoom ? this.app.camera.zoom : 1);
+        var width = this.image.width * (this.canZoom ? this.app.camera.zoom : 1);
         var x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height) + .5);
         var y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
         ctx.save();
@@ -152,7 +154,7 @@ var Picture = /** @class */ (function () {
         ctx.drawImage(this.image, x, y, width, height);
         ctx.closePath();
         ctx.restore();
-        if (this.text) {
+        if (this.text && this.app.canRenderText) {
             ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
             ctx.fillStyle = '#914f36';
             ctx.textAlign = "center";
@@ -172,67 +174,7 @@ exports.default = Picture;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var map_js_1 = __webpack_require__(3);
-var _map = {
-    areas: [
-        {
-            name: "Базовый магазин",
-            position: [-17984, 0, 18683, 2000],
-            color: '#bc743c45'
-        },
-        {
-            name: "Базовый магазин",
-            position: [-0, 0, 0, 2000],
-            color: '#bc243c45'
-        }
-    ],
-    teleports: [
-        {
-            name: "Телепорт в ад",
-            position: [0, 0],
-            url: 'assets/teleport.png'
-        }
-    ],
-    pictures: [],
-    quests: [
-        {
-            position: [-1500, -4500],
-            url: 'assets/cross.png',
-            name: "Имя точки",
-        },
-        {
-            position: [4000, -4000],
-            url: 'assets/point.png',
-            name: "Имя другой точки",
-        }
-    ]
-};
-window.map = new map_js_1.default('world-map', _map);
-var s = {
-    "BOT-11AB5": {
-        name: 'Вася',
-        state: {
-            a: 15,
-            p: [2000, 0, 0]
-        }
-    }, "BOT-12AB5": {
-        name: 'Вася2',
-        state: {
-            a: 15,
-            p: [1000, 0, 1000]
-        }
-    }, "BOT-13AB5": {
-        name: 'Вася3'
-    }
-};
-map.setShips(s);
-setInterval(function () {
-    var time = Date.now() * 0.0005;
-    for (var k in s) {
-        s[k].state && (s[k].state.p[2] += Math.sin(time * 0.7) * 20);
-    }
-    s["BOT-11AB5"].state.a += Math.sin(time * 0.7) * 5;
-    s["BOT-12AB5"].state.a += Math.cos(time * 0.7) * 5;
-}, 1000 / 60);
+window.Map = map_js_1.default;
 
 
 /***/ }),
@@ -248,6 +190,7 @@ var picture_1 = __webpack_require__(1);
 var highmap_1 = __webpack_require__(5);
 var circle_1 = __webpack_require__(6);
 var render_ships_1 = __webpack_require__(7);
+var render_quest_1 = __webpack_require__(8);
 var Map = /** @class */ (function () {
     function Map(element, map) {
         this._map = map;
@@ -256,6 +199,8 @@ var Map = /** @class */ (function () {
         this.canRenderAreas = true;
         this.canRenderQuests = true;
         this.canRenderTeleports = true;
+        this.canRenderGrid = true;
+        this.canRenderText = true;
         this.ships = [];
         this.areas = [];
         this.quests = [];
@@ -267,7 +212,7 @@ var Map = /** @class */ (function () {
         this.camera = {
             x: 0,
             y: 0,
-            zoom: 1
+            zoom: 2
         };
         this.mouseDown = false;
         this.oldPosition = { x: null, y: null };
@@ -275,6 +220,9 @@ var Map = /** @class */ (function () {
     }
     Map.prototype.setShips = function (ships) {
         this.ships = ships;
+    };
+    Map.prototype.setQuests = function (quests) {
+        this.quests = quests;
     };
     Map.prototype.check = function (checkbox) {
         if (checkbox.id === 'q') {
@@ -288,6 +236,12 @@ var Map = /** @class */ (function () {
         }
         else if (checkbox.id === 'a') {
             this.canRenderAreas = !this.canRenderAreas;
+        }
+        else if (checkbox.id === 'g') {
+            this.canRenderGrid = !this.canRenderGrid;
+        }
+        else if (checkbox.id === 't') {
+            this.canRenderText = !this.canRenderText;
         }
     };
     Map.prototype.parseMap = function () {
@@ -331,30 +285,40 @@ var Map = /** @class */ (function () {
         if (z === void 0) { z = this.camera.zoom; }
         this.goToRegion(void 0, z);
     };
+    Map.prototype.setShops = function (shops) {
+        var _this = this;
+        (shops || []).forEach(function (s) {
+            _this.areas.push(new circle_1.default(_this, { x: s.position[0], y: s.position[2] }, s.position[3], '#b2461978', s.name));
+        });
+    };
     Map.prototype.registerEvents = function () {
         var _this = this;
         this.canvas.addEventListener("wheel", function (e) {
+            e.stopPropagation();
             var delta = e.deltaY || e.detail || e.wheelDelta;
             if (delta > 0) {
-                _this.camera.zoom += 0.4;
+                _this.camera.zoom += 0.2;
             }
             else {
-                _this.camera.zoom -= 0.4;
+                _this.camera.zoom -= 0.2;
             }
-            if (_this.camera.zoom <= 0.8)
-                _this.camera.zoom = 0.8;
-            if (_this.camera.zoom > 5)
-                _this.camera.zoom = 5;
+            if (_this.camera.zoom <= 0.4)
+                _this.camera.zoom = 0.4;
+            if (_this.camera.zoom > 6)
+                _this.camera.zoom = 6;
             _this.zoom();
         });
         this.canvas.addEventListener("mousedown", function (e) {
+            e.stopPropagation();
             _this.mouseDown = true;
         });
         document.addEventListener("mouseup", function (e) {
+            e.stopPropagation();
             _this.mouseDown = false;
             _this.oldPosition = { x: null, y: null };
         });
         this.canvas.addEventListener("mousemove", function (e) {
+            e.stopPropagation();
             if (!_this.mouseDown)
                 return;
             if (_this.oldPosition.x === null && _this.oldPosition.y === null) {
@@ -374,12 +338,16 @@ var Map = /** @class */ (function () {
             };
         });
     };
-    Map.prototype.open = function () {
+    Map.prototype.open = function (x, y) {
         var _this = this;
+        if (x === void 0) { x = 0; }
+        if (y === void 0) { y = 0; }
         if (this.opened)
-            return;
+            return this.goToGlobalPosition(x, y);
+        ;
         if (!this.inited)
             this.init();
+        this.goToGlobalPosition(x, y);
         this.interval = setInterval(function () { return _this.render(); }, 1000 / 60);
         this.opened = true;
     };
@@ -415,8 +383,8 @@ var Map = /** @class */ (function () {
         this.pictures.forEach(function (e) { return e.render(_this.ctx); });
         this.canRenderTeleports && this.teleports.forEach(function (e) { return e.render(_this.ctx); });
         this.canRenderAreas && this.areas.forEach(function (e) { return e.render(_this.ctx); });
-        this.canRenderQuests && this.quests.forEach(function (e) { return e.render(_this.ctx); });
         this.canRenderShips && render_ships_1.default(this, this.ctx);
+        this.canRenderQuests && render_quest_1.default(this, this.ctx);
         this.grid.render(this.ctx);
     };
     return Map;
@@ -456,19 +424,23 @@ var Grid = /** @class */ (function () {
         this.regions.forEach(function (r) {
             var x = ~~(-_this._width / 2 + _this.app.camera.x + _this.app.center.x + (r[0] * _this._width) + .5);
             var y = ~~(-_this._height / 2 + _this.app.camera.y + _this.app.center.y + (r[1] * _this._height) + .5);
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + _this._width, y);
-            if (_this.app.camera.zoom > .1) {
+            if (_this.app.canRenderGrid && _this.app.camera.zoom >= 0.6) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + _this._width, y);
+            }
+            if (_this.app.camera.zoom > 0.7) {
                 ctx.font = 22 - _this.length * 1.4 + "px Comic Sans MS";
                 ctx.fillStyle = '#914f36';
                 ctx.textAlign = "center";
                 ctx.fillText(~~r[0] + "=" + ~~r[1], x + _this._width / 2, y + _this._height / 2);
             }
-            ctx.moveTo(x, y);
-            ctx.lineTo(x, y + _this._height);
-            ctx.strokeStyle = '#bc743c';
-            ctx.stroke();
+            if (_this.app.canRenderGrid && _this.app.camera.zoom >= 0.6) {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y + _this._height);
+                ctx.strokeStyle = '#bc743c';
+                ctx.stroke();
+            }
         });
     };
     return Grid;
@@ -573,10 +545,12 @@ var Сircle = /** @class */ (function () {
         ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
         ctx.fillStyle = this.color;
         ctx.fill();
-        ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
-        ctx.fillStyle = '#914f36';
-        ctx.textAlign = "center";
-        ctx.fillText("" + this.text, x, y - 20);
+        if (this.app.canRenderText) {
+            ctx.font = 22 - this.app.grid.length * 1.4 + "px Comic Sans MS";
+            ctx.fillStyle = '#914f36';
+            ctx.textAlign = "center";
+            ctx.fillText("" + this.text, x, y - 20);
+        }
     };
     return Сircle;
 }());
@@ -591,16 +565,66 @@ exports.default = Сircle;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var picture_1 = __webpack_require__(1);
-var player = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/ship.png' });
+var _ship = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/brownship.png' }, false, false);
+var player = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/player.png' }, false, false);
 function default_1(app, ctx) {
     // console.log(app.ships)
     for (var key in app.ships) {
         var ship = app.ships[key];
         if (!ship.state)
             continue;
-        player.app = app;
-        player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
-        player.render(ctx);
+        if (ship.im) {
+            player.app = app;
+            player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
+            player.render(ctx);
+        }
+        else {
+            _ship.app = app;
+            _ship.move(ship.state.p[0], ship.state.p[2]);
+            _ship.render(ctx);
+        }
+    }
+}
+exports.default = default_1;
+
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var picture_1 = __webpack_require__(1);
+var target = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/green_cross.png' }, false, false);
+var hint = new picture_1.default(null, { x: 0, y: 0 }, { url: 'assets/q.png' }, false, false);
+function default_1(app, ctx) {
+    var _loop_1 = function (key) {
+        var quest = app.quests.quests[key];
+        quest.completion.forEach((function (c) {
+            if (c.type !== 'point')
+                return;
+            target.text = quest.title;
+            target.app = app;
+            target.move(c.value[0], c.value[2]);
+            target.render(ctx);
+        }));
+        if (quest.map_hint) {
+            hint.text = quest.title;
+            hint.app = app;
+            hint.move(quest.map_hint[0], quest.map_hint[2]);
+            hint.render(ctx);
+        }
+        /*    if (!ship.state)
+              continue;
+        
+            player.app = app;
+            player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
+        
+            player.render(ctx);*/
+    };
+    for (var key in app.quests.quests) {
+        _loop_1(key);
     }
 }
 exports.default = default_1;

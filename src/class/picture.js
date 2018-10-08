@@ -3,7 +3,8 @@ import {calcRegion, regionFromPosition} from './utils';
 const CUBSTEP = 2000;
 
 export default class Picture {
-  constructor(app, position, image, text) {
+  constructor(app, position, image, text, canZoom = true) {
+    this.canZoom      = canZoom;
     this.text         = text;
     this.app          = app;
     this.rawImage     = image;
@@ -39,8 +40,8 @@ export default class Picture {
     if (!this.app.grid.regions.some(r => r[0] == this.region[0] && r[1] == this.region[1]))
       return;
 
-    let height = this.image.height * this.app.camera.zoom;
-    let width  = this.image.width * this.app.camera.zoom;
+    let height = this.image.height * (this.canZoom ? this.app.camera.zoom : 1);
+    let width  = this.image.width * (this.canZoom ? this.app.camera.zoom : 1);
 
     let x = ~~(-width / 2 + this.app.camera.x + this.app.center.x + (this.position.x * this.app.grid._height ) + .5);
     let y = ~~(-height / 2 + this.app.camera.y + this.app.center.y + (this.position.y * this.app.grid._width) + .5);
@@ -64,7 +65,7 @@ export default class Picture {
     ctx.restore();
 
 
-    if (this.text) {
+    if (this.text && this.app.canRenderText) {
       ctx.font      = `${22 - this.app.grid.length * 1.4}px Comic Sans MS`;
       ctx.fillStyle = '#914f36';
       ctx.textAlign = "center";

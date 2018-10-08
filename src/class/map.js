@@ -4,6 +4,7 @@ import Picture from './picture';
 import Highmap from './highmap';
 import Сircle from './circle';
 import renderShips from './render.ships';
+import renderQuests from './render.quest';
 
 export default class Map {
   constructor(element, map) {
@@ -14,6 +15,8 @@ export default class Map {
     this.canRenderAreas     = true;
     this.canRenderQuests    = true;
     this.canRenderTeleports = true;
+    this.canRenderGrid      = true;
+    this.canRenderText      = true;
 
     this.ships     = [];
     this.areas     = [];
@@ -28,7 +31,7 @@ export default class Map {
     this.camera = {
       x:    0,
       y:    0,
-      zoom: 1
+      zoom: 2
     };
 
     this.mouseDown   = false;
@@ -40,6 +43,10 @@ export default class Map {
     this.ships = ships;
   }
 
+  setQuests(quests) {
+    this.quests = quests;
+  }
+
   check(checkbox) {
     if (checkbox.id === 'q') {
       this.canRenderQuests = !this.canRenderQuests;
@@ -49,6 +56,10 @@ export default class Map {
       this.canRenderShips = !this.canRenderShips;
     } else if (checkbox.id === 'a') {
       this.canRenderAreas = !this.canRenderAreas;
+    } else if (checkbox.id === 'g') {
+      this.canRenderGrid = !this.canRenderGrid;
+    } else if (checkbox.id === 't') {
+      this.canRenderText = !this.canRenderText;
     }
   }
 
@@ -106,35 +117,45 @@ export default class Map {
     this.goToRegion(void 0, z);
   }
 
+  setShops(shops) {
+    (shops || []).forEach(s => {
+      this.areas.push(new Сircle(this, {x: s.position[0], y: s.position[2]}, s.position[3], '#b2461978', s.name));
+    });
+  }
+
   registerEvents() {
     this.canvas.addEventListener("wheel", (e) => {
+      e.stopPropagation();
       var delta = e.deltaY || e.detail || e.wheelDelta;
 
       if (delta > 0) {
-        this.camera.zoom += 0.4;
+        this.camera.zoom += 0.2;
       } else {
-        this.camera.zoom -= 0.4;
+        this.camera.zoom -= 0.2;
       }
 
-      if (this.camera.zoom <= 0.8)
-        this.camera.zoom = 0.8;
+      if (this.camera.zoom <= 0.4)
+        this.camera.zoom = 0.4;
 
-      if (this.camera.zoom > 5)
-        this.camera.zoom = 5;
+      if (this.camera.zoom > 6)
+        this.camera.zoom = 6;
 
       this.zoom();
     });
 
     this.canvas.addEventListener("mousedown", (e) => {
+      e.stopPropagation();
       this.mouseDown = true;
     });
 
     document.addEventListener("mouseup", (e) => {
+      e.stopPropagation();
       this.mouseDown   = false;
       this.oldPosition = {x: null, y: null};
     });
 
     this.canvas.addEventListener("mousemove", (e) => {
+      e.stopPropagation();
       if (!this.mouseDown)
         return;
 
@@ -161,13 +182,14 @@ export default class Map {
     });
   }
 
-  open() {
+  open(x = 0, y = 0) {
     if (this.opened)
-      return;
+      return this.goToGlobalPosition(x, y);;
 
     if (!this.inited)
       this.init();
 
+    this.goToGlobalPosition(x, y);
     this.interval = setInterval(() => this.render(), 1000 / 60);
     this.opened   = true;
   }
@@ -214,13 +236,10 @@ export default class Map {
 
     this.canRenderAreas && this.areas.forEach(e => e.render(this.ctx));
 
-    this.canRenderQuests && this.quests.forEach(e => e.render(this.ctx));
+    this.canRenderShips && renderShips(this, this.ctx);
 
-    this.canRenderShips && renderShips(this,this.ctx);
-
+    this.canRenderQuests && renderQuests(this, this.ctx);
 
     this.grid.render(this.ctx);
-
-
   }
 }

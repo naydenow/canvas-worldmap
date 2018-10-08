@@ -1,6 +1,7 @@
 import Picture from './picture';
 
-const player = new Picture(null, {x: 0, y: 0}, {url: 'assets/ship.png'});
+const _ship = new Picture(null, {x: 0, y: 0}, {url: 'assets/brownship.png'}, false, false);
+const player = new Picture(null, {x: 0, y: 0}, {url: 'assets/player.png'}, false, false);
 
 export default function (app, ctx) {
   // console.log(app.ships)
@@ -11,10 +12,17 @@ export default function (app, ctx) {
     if (!ship.state)
       continue;
 
-    player.app = app;
-    player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
+    if (ship.im){
+      player.app = app;
+      player.move(ship.state.p[0], ship.state.p[2], ship.state.a);
 
-    player.render(ctx);
+      player.render(ctx);
+    } else {
+      _ship.app = app;
+      _ship.move(ship.state.p[0], ship.state.p[2]);
+
+      _ship.render(ctx);
+    }
 
   }
 }
