@@ -1,7 +1,5 @@
 import {calcRegion, regionFromPosition} from './utils';
 
-const defLength = 10;
-
 export default class Grid {
   constructor(app) {
     this.app     = app;
@@ -12,7 +10,7 @@ export default class Grid {
   }
 
   calcProp() {
-    this.length  = defLength / this.app.camera.zoom;
+    this.length  = this.app.defLength / this.app.camera.zoom;
     this._height = ~~(this.app.height / this.length + .5);
     this._width  = ~~(this.app.width / this.length + .5);
 

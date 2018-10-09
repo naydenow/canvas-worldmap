@@ -192,9 +192,12 @@ var circle_1 = __webpack_require__(6);
 var render_ships_1 = __webpack_require__(7);
 var render_quest_1 = __webpack_require__(8);
 var Map = /** @class */ (function () {
-    function Map(element, map) {
+    function Map(element, map, options) {
+        if (map === void 0) { map = {}; }
+        if (options === void 0) { options = {}; }
         this._map = map;
         this.element = element;
+        this.defLength = options.defLength || 10;
         this.canRenderShips = true;
         this.canRenderAreas = true;
         this.canRenderQuests = true;
@@ -244,21 +247,27 @@ var Map = /** @class */ (function () {
             this.canRenderText = !this.canRenderText;
         }
     };
-    Map.prototype.parseMap = function () {
+    Map.prototype.parseMap = function (map) {
         var _this = this;
-        (this._map.areas || []).forEach(function (a) {
+        if (map === void 0) { map = this._map; }
+        this.areas = [];
+        this.pictures = [];
+        this.quests = [];
+        this.teleports = [];
+        this.highmap = [];
+        (map.areas || []).forEach(function (a) {
             _this.areas.push(new circle_1.default(_this, { x: a.position[0], y: a.position[2] }, a.position[3], a.color, a.name));
         });
-        (this._map.pictures || []).forEach(function (p) {
+        (map.pictures || []).forEach(function (p) {
             _this.pictures.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
         });
-        (this._map.quests || []).forEach(function (p) {
+        (map.quests || []).forEach(function (p) {
             _this.quests.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
         });
-        (this._map.teleports || []).forEach(function (p) {
+        (map.teleports || []).forEach(function (p) {
             _this.teleports.push(new picture_1.default(_this, { x: p.position[0], y: p.position[1] }, { url: p.url }, p.name));
         });
-        (this._map.highmap || []).forEach(function (h) {
+        (map.highmap || []).forEach(function (h) {
             _this.highmap.push(new highmap_1.default(_this, h));
         });
     };
@@ -400,7 +409,6 @@ exports.default = Map;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = __webpack_require__(0);
-var defLength = 10;
 var Grid = /** @class */ (function () {
     function Grid(app) {
         this.app = app;
@@ -410,7 +418,7 @@ var Grid = /** @class */ (function () {
         this.updateNearRegion(app.camera.zoom);
     }
     Grid.prototype.calcProp = function () {
-        this.length = defLength / this.app.camera.zoom;
+        this.length = this.app.defLength / this.app.camera.zoom;
         this._height = ~~(this.app.height / this.length + .5);
         this._width = ~~(this.app.width / this.length + .5);
     };

@@ -7,10 +7,10 @@ import renderShips from './render.ships';
 import renderQuests from './render.quest';
 
 export default class Map {
-  constructor(element, map) {
-    this._map    = map;
-    this.element = element;
-
+  constructor(element, map = {}, options = {}) {
+    this._map               = map;
+    this.element            = element;
+    this.defLength          = options.defLength || 10;
     this.canRenderShips     = true;
     this.canRenderAreas     = true;
     this.canRenderQuests    = true;
@@ -63,28 +63,32 @@ export default class Map {
     }
   }
 
-  parseMap() {
-    (this._map.areas || []).forEach(a => {
+  parseMap(map = this._map) {
+    this.areas     = [];
+    this.pictures  = [];
+    this.quests    = [];
+    this.teleports = [];
+    this.highmap   = [];
+
+    (map.areas || []).forEach(a => {
       this.areas.push(new Сircle(this, {x: a.position[0], y: a.position[2]}, a.position[3], a.color, a.name));
     });
 
-    (this._map.pictures || []).forEach(p => {
+    (map.pictures || []).forEach(p => {
       this.pictures.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
     });
 
-    (this._map.quests || []).forEach(p => {
+    (map.quests || []).forEach(p => {
       this.quests.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
     });
 
-    (this._map.teleports || []).forEach(p => {
+    (map.teleports || []).forEach(p => {
       this.teleports.push(new Picture(this, {x: p.position[0], y: p.position[1]}, {url: p.url}, p.name));
     });
 
-    (this._map.highmap || []).forEach(h => {
+    (map.highmap || []).forEach(h => {
       this.highmap.push(new Highmap(this, h));
     });
-
-
   }
 
   goToRegion(region = this.grid.center, zoom) {
@@ -184,7 +188,8 @@ export default class Map {
 
   open(x = 0, y = 0) {
     if (this.opened)
-      return this.goToGlobalPosition(x, y);;
+      return this.goToGlobalPosition(x, y);
+    ;
 
     if (!this.inited)
       this.init();
